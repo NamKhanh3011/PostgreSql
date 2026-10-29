@@ -26,3 +26,21 @@ DiskManager* DiskManagerOpen(const char* db_file_path){
     fseek(dm->db_file,0,SEEK_SET);
     return dm;
 }
+void DiskManagerClose(DiskManager* dm){
+    if(dm->db_file!=NULL){
+        fclose(dm->db_file);
+        free(dm);
+    }
+}
+bool DiskManagerReadPage(DiskManager* dm,BlockNumber block_num,Page page_out){
+    if(block_num>=dm->file_pages){
+        return false;
+    }
+    long offset=(long)block_num*BLCKSZ;
+    fseek(dm->db_file,offset,SEEK_SET);
+    size_t byteread=fread(page_out,1,BLCKSZ,dm->db_file);
+    if(byteread!=BLCKSZ){
+        return false;
+    }
+    return true;
+}
