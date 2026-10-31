@@ -3,6 +3,7 @@
 
 #include "common/types.h"
 #include "storage/page.h"
+#include "storage/disk_manager.h"
 
 #define BUFFER_POOL_SIZE 64  /* Default frame count */
 
@@ -20,8 +21,16 @@ typedef struct BufferPoolManager {
     char*       frames;      /* Contiguous memory: BUFFER_POOL_SIZE * BLCKSZ */
     BufferDesc  descriptors[BUFFER_POOL_SIZE];
     size_t      clock_hand;
-    int         disk_fd;
+    DiskManager* disk_manager;
 } BufferPoolManager;
+
+BufferPoolManager* BufferPoolCreate(const char* db_file_path);
+Page BufferPoolFetchPage(BufferPoolManager* bpm, BlockNumber block_num);
+void BufferPoolUnpinPage(BufferPoolManager* bpm, BlockNumber block_num, bool is_dirty);
+void BufferPoolFlushAll(BufferPoolManager* bpm);
+void BufferPoolDestroy(BufferPoolManager* bpm);
+
+#endif /* STORAGE_BUFFER_POOL_H */
 
 BufferPoolManager* BufferPoolCreate(const char* db_file_path);
 Page BufferPoolFetchPage(BufferPoolManager* bpm, BlockNumber block_num);
