@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include "common/types.h"
+#include "storage/page.h"
 
 typedef struct DiskManager{
     FILE* db_file;
@@ -27,10 +29,13 @@ DiskManager* DiskManagerOpen(const char* db_file_path){
     return dm;
 }
 void DiskManagerClose(DiskManager* dm){
+    if(dm==NULL){
+        return;
+    }
     if(dm->db_file!=NULL){
         fclose(dm->db_file);
-        free(dm);
     }
+    free(dm);
 }
 bool DiskManagerReadPage(DiskManager* dm,BlockNumber block_num,Page page_out){
     if(block_num>=dm->file_pages){
@@ -43,4 +48,24 @@ bool DiskManagerReadPage(DiskManager* dm,BlockNumber block_num,Page page_out){
         return false;
     }
     return true;
+}
+bool DiskManagerWritePage(DiskManager* dm,BlockNumber block_num,const Page page_in){
+    long offset=(long)block_num*BLCKSZ;
+    fseek(dm->db_file,offset,SEEK_SET);
+    size_t bytewrite=fwrite(page_in,1,BLCKSZ,dm->db_file);
+    size_t flush=fflush(dm->db_file);
+    if(bytewrite!=BLCKSZ){
+        return false;
+    }
+    return true;
+}
+BlockNumber DiskManagerAllocatePage(DiskManager* dm){
+    BlockNumber new_page_id=dm->file_pages;
+    char empty_page[BLCKSZ]={0};
+    DiskManagerWritePage(dm,new_page_id,empty_page);
+    if(!DiskManagerWritePage(dm,new_page_id,empty_page)){
+        return InvalidBlockNumber;
+    }
+    dm->file_pages++;
+    return new_page_id;
 }
