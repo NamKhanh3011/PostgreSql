@@ -14,7 +14,7 @@ typedef struct BTreeIndex {
     BlockNumber root_block;
     const char* index_name;
 } BTreeIndex;
-
+void BTreeInit(BTreeIndex* idx, const char* name, BufferPoolManager* bpm);
 bool BTreeInsert(BTreeIndex* idx, int64_t key, ItemPointerData tid);
 bool BTreeFind(BTreeIndex* idx, int64_t key, ItemPointerData* outTid);
 
