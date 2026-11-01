@@ -49,8 +49,36 @@ static FrameId FindVictimFrame(BufferPoolManager* bpm){
     }
     return -1;
 }
-
-Page BufferPoolFetchPage(BufferPoolManager* bpm, BlockNumber block_num);
+Page BufferPoolFetchPage(BufferPoolManager* bpm, BlockNumber block_num){
+    if(bpm==NULL){
+        return NULL;
+    }
+    for(int i=0;i<BUFFER_POOL_SIZE;i++){
+        if(bpm->descriptors[i].block_num==block_num){
+            bpm->descriptors[i].pin_count++;
+            bpm->descriptors[i].usage_flag=true;
+            return bpm->frames+(i*BLCKSZ);
+        }
+    }
+    FrameId victim=FindVictimFrame(bpm);
+    if(victim==-1){
+        return NULL;
+    }
+    BufferDesc* desc=&bpm->descriptors[victim];
+    Page frame_ptr=bpm->frames+(victim*BLCKSZ);
+    if(desc->block_num!=InvalidBlockNumber&&desc->is_dirty){
+        DiskManagerWritePage(bpm->disk_manager,block_num,frame_ptr);
+        desc->is_dirty = false;
+    }
+    if (!DiskManagerReadPage(bpm->disk_manager, block_num, frame_ptr)) {
+        return NULL;
+    }
+    desc->block_num=block_num;
+    desc->pin_count=1;
+    desc->is_dirty=false;
+    desc->usage_flag=true;
+    return frame_ptr;
+};
 void BufferPoolUnpinPage(BufferPoolManager* bpm, BlockNumber block_num, bool is_dirty);
 void BufferPoolFlushAll(BufferPoolManager* bpm);
 void BufferPoolDestroy(BufferPoolManager* bpm);
