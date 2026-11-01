@@ -93,5 +93,25 @@ void BufferPoolUnpinPage(BufferPoolManager* bpm, BlockNumber block_num, bool is_
         }
     }
 }
-void BufferPoolFlushAll(BufferPoolManager* bpm);
-void BufferPoolDestroy(BufferPoolManager* bpm);
+void BufferPoolFlushAll(BufferPoolManager* bpm){
+    if(bpm==NULL) return;
+    for(int i=0;i<BUFFER_POOL_SIZE;i++){
+        BufferDesc* desc=&bpm->descriptors[i];
+        if(desc->block_num!=InvalidBlockNumber&& desc->is_dirty){
+            Page frame_ptr=bpm->frames+(i*BLCKSZ);
+            DiskManagerWritePage(bpm->disk_manager,desc->block_num,frame_ptr);
+            desc->is_dirty=false;
+        }
+    }
+}
+void BufferPoolDestroy(BufferPoolManager* bpm){
+    if(bpm==NULL) return;
+    BufferPoolFlushAll(bpm);
+    if(bpm->disk_manager!=NULL){
+        DiskManagerClose(bpm->disk_manager);
+    }
+   if(bpm->frames!=NULL){
+        free(bpm->frames);
+    }
+    free(bpm);
+} 
