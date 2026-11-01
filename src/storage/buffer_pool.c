@@ -79,6 +79,19 @@ Page BufferPoolFetchPage(BufferPoolManager* bpm, BlockNumber block_num){
     desc->usage_flag=true;
     return frame_ptr;
 };
-void BufferPoolUnpinPage(BufferPoolManager* bpm, BlockNumber block_num, bool is_dirty);
+void BufferPoolUnpinPage(BufferPoolManager* bpm, BlockNumber block_num, bool is_dirty){
+    if(bpm==NULL) return;
+    for(int i=0;i<BUFFER_POOL_SIZE;i++){
+        if(bpm->descriptors[i].block_num==block_num){
+            if(is_dirty){
+                bpm->descriptors[i].is_dirty=true;
+            }
+            if(bpm->descriptors[i].pin_count>0){
+                bpm->descriptors[i].pin_count--
+            }
+            return;
+        }
+    }
+}
 void BufferPoolFlushAll(BufferPoolManager* bpm);
 void BufferPoolDestroy(BufferPoolManager* bpm);
