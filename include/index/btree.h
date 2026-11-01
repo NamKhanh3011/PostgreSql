@@ -10,6 +10,15 @@ typedef struct BTreePageHeader {
     BlockNumber prev_leaf;
 } BTreePageHeader;
 
+typedef struct BTreePage {
+    BTreePageHeader header;
+    int64_t         keys[BTREE_MAX_KEYS];
+    union {
+        ItemPointerData tids[BTREE_MAX_KEYS];         
+        BlockNumber     children[BTREE_MAX_KEYS + 1]; 
+    };
+} BTreePage;
+
 typedef struct BTreeIndex {
     BlockNumber root_block;
     const char* index_name;
