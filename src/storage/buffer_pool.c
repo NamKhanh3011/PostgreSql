@@ -30,7 +30,24 @@ BufferPoolManager* BufferPoolCreate(const char* db_file_path){
     return bpm;
 }
 static FrameId FindVictimFrame(BufferPoolManager* bpm){
-    
+    for(int i=0;i<BUFFER_POOL_SIZE*2;i++){
+        FrameId fid=(FrameId)bpm->clock_hand;
+        BufferDesc* desc = &bpm->descriptors[fid];
+
+        bpm->clock_hand=(bpm->clock_hand+1)/BUFFER_POOL_SIZE;
+        if(desc->block_num==InvalidBlockNumber){
+            return fid;
+        }
+        if(desc->pin_count>0){
+            continue;
+        }
+        if(desc->is_dirty){
+            desc->is_dirty=false;
+            continue;
+        }
+        return fid;
+    }
+    return -1;
 }
 
 Page BufferPoolFetchPage(BufferPoolManager* bpm, BlockNumber block_num);
