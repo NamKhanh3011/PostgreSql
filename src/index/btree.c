@@ -27,5 +27,33 @@ static int BTreeBinarySearch(const int64_t keys[], int num_keys, int64_t target,
     }
     return low;
 }
-bool BTreeFind(BTreeIndex* idx, int64_t key, ItemPointerData* outTid);
+bool BTreeFind(BTreeIndex* idx, int64_t key, ItemPointerData* outTid){
+    if(idx==NULL||idx->root_block==InvalidBlockNumber){
+        return false;
+    }
+    BlockNumber curr_block=idx->root_block;
+    bool found=false;
+    while(curr_block!=InvalidBlockNumber){
+        BTreePage* node=(BTreePage*)BufferPoolFetchPage(idx->bpm,curr_block);
+        if(node==NULL){
+            return false;
+        }
+        if(node->header.is_leaf){
+            int pos=BTreeBinarySearch(node->keys,node->header.num_keys,key,&found);
+            if(found&&outTid!=NULL){
+                *outTid=node->tids[pos];
+            }
+            BufferPoolUnpinPage(idx->bpm,curr_block,false);
+            return found;
+        }
+        int child_idx=BTreeBinarySearch(node->keys,node->header.num_keys,key,&found);
+        if(found){
+            child_idx++;
+        }
+        BlockNumber next_block=node->children[child_idx];
+        BufferPoolUnpinPage(idx->bpm,curr_block,false);
+        curr_block=next_block;
+    }
+    return false;
+}
 bool BTreeInsert(BTreeIndex* idx, int64_t key, ItemPointerData tid);
