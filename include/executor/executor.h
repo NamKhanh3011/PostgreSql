@@ -18,7 +18,8 @@ typedef struct ExecutorNode {
     void* node_state;
 } ExecutorNode;
 
-ExecutorNode* CreateSeqScanExecutor(const char* table_name);
+ExecutorNode* CreateSeqScanExecutor(BufferPoolManager* bpm, BlockNumber total_blocks);
 ExecutorNode* CreateFilterExecutor(ExecutorNode* child, bool (*predicate)(Tuple*));
+ExecutorNode* CreateLimitExecutor(ExecutorNode* child, size_t limit);
 
 #endif /* EXECUTOR_H */
