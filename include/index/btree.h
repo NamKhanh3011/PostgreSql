@@ -22,9 +22,10 @@ typedef struct BTreePage {
 typedef struct BTreeIndex {
     BlockNumber root_block;
     const char* index_name;
+    BufferPoolManager* bpm;
 } BTreeIndex;
 void BTreeInit(BTreeIndex* idx, const char* name, BufferPoolManager* bpm);
-bool BTreeInsert(BTreeIndex* idx, int64_t key, ItemPointerData tid);
 bool BTreeFind(BTreeIndex* idx, int64_t key, ItemPointerData* outTid);
+bool BTreeInsert(BTreeIndex* idx, int64_t key, ItemPointerData tid);
 
 #endif /* INDEX_BTREE_H */
