@@ -69,3 +69,98 @@ ExecutorNode* CreateSeqScanExecutor(BufferPoolManager* bpm,BlockNumber total_blo
     node->node_state=state;
     return node;
 }
+//FilterExecutor
+typedef struct FilterState {
+    ExecutorNode* child;
+    bool (*predicate)(Tuple*);
+} FilterState;
+
+static void FilterInit(ExecutorNode* self) {
+    FilterState* state = (FilterState*)self->node_state;
+    state->child->Init(state->child);
+}
+
+static Tuple* FilterNext(ExecutorNode* self) {
+    FilterState* state = (FilterState*)self->node_state;
+
+    while (1) {
+        Tuple* tuple = state->child->Next(state->child);
+        if (tuple == NULL) {
+            return NULL; 
+        }
+        if (state->predicate(tuple)) {
+            return tuple; 
+        }
+    }
+}
+
+static void FilterClose(ExecutorNode* self) {
+    FilterState* state = (FilterState*)self->node_state;
+    state->child->Close(state->child);
+    free(state);
+    free(self);
+}
+
+ExecutorNode* CreateFilterExecutor(ExecutorNode* child, bool (*predicate)(Tuple*)) {
+    ExecutorNode* node = (ExecutorNode*)malloc(sizeof(ExecutorNode));
+    FilterState* state = (FilterState*)malloc(sizeof(FilterState));
+
+    state->child = child;
+    state->predicate = predicate;
+
+    node->Init = FilterInit;
+    node->Next = FilterNext;
+    node->Close = FilterClose;
+    node->node_state = state;
+    return node;
+    //Limit
+    typedef struct LimitState {
+    ExecutorNode* child;
+    size_t        limit;
+    size_t        count;
+} LimitState;
+
+static void LimitInit(ExecutorNode* self) {
+    LimitState* state = (LimitState*)self->node_state;
+    state->child->Init(state->child);
+    state->count = 0;
+}
+
+static Tuple* LimitNext(ExecutorNode* self) {
+    LimitState* state = (LimitState*)self->node_state;
+
+    if (state->count >= state->limit) {
+        return NULL;
+    }
+
+    Tuple* tuple = state->child->Next(state->child);
+    if (tuple == NULL) {
+        return NULL;
+    }
+
+    state->count++;
+    return tuple;
+}
+
+static void LimitClose(ExecutorNode* self) {
+    LimitState* state = (LimitState*)self->node_state;
+    state->child->Close(state->child);
+    free(state);
+    free(self);
+}
+
+ExecutorNode* CreateLimitExecutor(ExecutorNode* child, size_t limit) {
+    ExecutorNode* node = (ExecutorNode*)malloc(sizeof(ExecutorNode));
+    LimitState* state = (LimitState*)malloc(sizeof(LimitState));
+
+    state->child = child;
+    state->limit = limit;
+    state->count = 0;
+
+    node->Init = LimitInit;
+    node->Next = LimitNext;
+    node->Close = LimitClose;
+    node->node_state = state;
+    return node;
+}
+}
