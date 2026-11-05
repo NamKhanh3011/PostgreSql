@@ -1,1 +1,28 @@
+# Binaries and executables
+*.exe
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+
+# Database storage and WAL log files
+*.db
+*.wal
+*.log
+
+# Build directories
+build/
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+
+# Python
+__pycache__/
+*.pyc
+
+# IDE & Editor configs
+.vscode/
+.idea/
+.DS_Store
 
