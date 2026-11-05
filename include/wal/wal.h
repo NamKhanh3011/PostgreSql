@@ -2,26 +2,34 @@
 #define WAL_H
 
 #include "common/types.h"
+#include <stdint.h>
+#include <stdio.h>
 
-typedef enum WalRecordType {
+typedef uint64_t XLogRecPtr; 
+
+typedef enum {
     WAL_INSERT_TUPLE = 1,
-    WAL_DELETE_TUPLE,
-    WAL_UPDATE_TUPLE,
-    WAL_COMMIT,
-    WAL_ABORT,
-    WAL_CHECKPOINT
-} WalRecordType;
+    WAL_COMMIT       = 2,
+    WAL_ABORT        = 3
+} WALRecordType;
 
-typedef struct WalRecordHeader {
-    Lsn             total_length;
-    TransactionId   txid;
-    WalRecordType   record_type;
-    Lsn             prev_lsn;
-    uint32_t        crc32;
-} WalRecordHeader;
+typedef struct WALRecordHeader {
+    XLogRecPtr    prev_lsn;
+    uint32_t      xid;
+    WALRecordType type;
+    BlockNumber   block_num;
+    LocationIndex slot_num;
+    uint32_t      data_len;
+} WALRecordHeader;
 
-Lsn WalAppendRecord(WalRecordType type, TransactionId txid, const void* data, size_t size);
-void WalFlush(Lsn target_lsn);
-void WalRunRecovery(void);  /* ARIES: Analysis -> Redo -> Undo */
+typedef struct WALManager {
+    FILE*      wal_file;
+    XLogRecPtr current_lsn;
+} WALManager;
 
-#endif /* WAL_H */
+WALManager* WALOpen(const char* wal_path);
+XLogRecPtr  WALWriteRecord(WALManager* wm, uint32_t xid, WALRecordType type, BlockNumber blk, LocationIndex slot, const char* data, uint32_t len);
+void        WALFlush(WALManager* wm);
+void        WALClose(WALManager* wm);
+
+#endif
