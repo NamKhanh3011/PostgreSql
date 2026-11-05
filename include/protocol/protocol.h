@@ -1,16 +1,16 @@
 #ifndef PROTOCOL_H
 #define PROTOCOL_H
 
-#include <stdint.h>
+#include <winsock2.h>
+#include <stdbool.h>
+#include "catalog/catalog.h"
 
-/* PostgreSQL Frontend/Backend Wire Protocol v3.0 message identifiers */
-#define PG_MSG_QUERY            'Q'
-#define PG_MSG_ROW_DESCRIPTION  'T'
-#define PG_MSG_DATA_ROW         'D'
-#define PG_MSG_COMMAND_COMPLETE 'C'
-#define PG_MSG_READY_FOR_QUERY  'Z'
-#define PG_MSG_ERROR_RESPONSE   'E'
+/* Giao thức Postgres v3.0 packet helpers */
+void SendAuthOk(SOCKET fd);
+void SendReadyForQuery(SOCKET fd);
+void SendRowDescription(SOCKET fd, TableSchema* schema);
+void SendDataRow(SOCKET fd, const char* values[], int num_vals);
+void SendCommandComplete(SOCKET fd, const char* tag);
+void SendErrorResponse(SOCKET fd, const char* msg);
 
-void ProtocolStartServer(int port);
-
-#endif /* PROTOCOL_H */
+#endif
